@@ -1,0 +1,14 @@
+{
+  "typescriptLinter.autoCheck": true,
+  "typescriptLinter.rules": {
+    "maxLineLength": 100,
+    "indentSize": 2,
+    "useSpaces": true,
+    "semicolons": true,
+    "quotes": "single",
+    "noConsole": true,
+    "noVar": true,
+    "noAny": true,
+    "noEmptyFunctions": true
+  }
+}

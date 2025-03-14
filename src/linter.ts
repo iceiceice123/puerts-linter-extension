@@ -20,6 +20,9 @@ export interface LinterRules {
     noVar?: boolean;
     noAny?: boolean;
     noEmptyFunctions?: boolean;
+    namingConvention?: boolean;
+    functionEmptyLine?: boolean;
+    trailingComma?: boolean;
     // 可以添加更多自定义规则
     [key: string]: any;
 }

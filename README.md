@@ -1,6 +1,6 @@
 # TypeScript Linter
 
-一个自定义的 VSCode 扩展，用于检查 TypeScript(puerts) 代码规范，支持高亮显示问题并提供悬停提示。
+一个自定义的 VSCode 扩展，用于检查 TypeScript 代码规范，支持高亮显示问题并提供悬停提示。
 
 ## 功能
 
@@ -24,6 +24,7 @@
 | noEmptyFunctions | 禁止使用空函数 | true |
 | namingConvention | 函数和变量的首字母必须小写，但是对于继承自UE的类首字母大写 | true |
 | functionEmptyLine | 函数实现的首行跟函数名之间空一行 | true |
+| trailingComma | 枚举或对象的元素应该以逗号结尾 | true |
 
 ## 安装方法
 
@@ -74,6 +75,71 @@
 
 ## 配置指南
 
+### 修改扩展设置的方法
+
+无论您是通过 .vsix 文件安装还是从扩展市场安装，设置的修改方法都是一样的。
+
+#### 方法一：通过 VSCode 设置界面
+
+1. 打开 VSCode 设置
+   - 点击左下角的齿轮图标，选择"设置"
+   - 或者使用快捷键 `Ctrl+,`（Windows/Linux）或 `Cmd+,`（Mac）
+
+2. 在设置搜索框中输入 `typescriptLinter`
+   - 这将筛选出所有与 TypeScript Linter 相关的设置
+
+3. 在设置界面中，您可以：
+   - 勾选或取消勾选 `typescriptLinter.autoCheck` 选项来启用或禁用自动检查
+   - 点击 `Edit in settings.json` 链接来直接编辑 JSON 格式的设置
+
+#### 方法二：直接编辑 settings.json 文件
+
+1. 打开 settings.json 文件
+   - 按下 `Ctrl+Shift+P`（Windows/Linux）或 `Cmd+Shift+P`（Mac）打开命令面板
+   - 输入 `Preferences: Open Settings (JSON)` 并选择该选项
+
+2. 在 settings.json 文件中添加或修改以下配置：
+
+```json
+{
+  "typescriptLinter.autoCheck": true,
+  "typescriptLinter.rules": {
+    "maxLineLength": 100,
+    "indentSize": 2,
+    "useSpaces": true,
+    "semicolons": true,
+    "quotes": "single",
+    "noConsole": true,
+    "noVar": true,
+    "noAny": true,
+    "noEmptyFunctions": true,
+    "namingConvention": true,
+    "functionEmptyLine": true,
+    "trailingComma": true
+  }
+}
+```
+
+3. 保存文件后，设置将立即生效
+
+#### 方法三：为特定工作区设置规则
+
+如果您想为特定项目设置不同的规则，可以创建工作区设置：
+
+1. 在项目根目录创建 `.vscode` 文件夹（如果不存在）
+2. 在该文件夹中创建 `settings.json` 文件
+3. 添加与上面相同格式的配置
+4. 这些设置将仅应用于当前项目
+
+#### 验证设置是否生效
+
+修改设置后，您可以通过以下方式验证设置是否生效：
+
+1. 打开一个 TypeScript 文件
+2. 故意违反一条规则（例如，添加一个超过最大行长度的行）
+3. 保存文件或运行 `TypeScript Linter: 检查当前文件` 命令
+4. 查看是否有相应的错误提示（亮黄色背景高亮）
+
 ### 基本配置
 
 您可以通过 VSCode 的设置界面或 `settings.json` 文件自定义规则：
@@ -100,7 +166,8 @@
     "noAny": true,
     "noEmptyFunctions": true,
     "namingConvention": true,
-    "functionEmptyLine": true
+    "functionEmptyLine": true,
+    "trailingComma": true
   }
 }
 ```
@@ -115,16 +182,17 @@
 
 ### 禁用特定规则
 
-如果您想禁用某个规则，可以将其值设置为 `false`：
+如果您想禁用某些规则，可以在VSCode的设置中进行配置。例如，要禁用引号风格检查，请在`settings.json`中添加以下配置：
 
 ```json
 {
   "typescriptLinter.rules": {
-    "noConsole": false,  // 允许使用 console 语句
-    "noAny": false       // 允许使用 any 类型
+    "quotes": false
   }
 }
 ```
+
+这将覆盖扩展的默认配置，并禁用引号风格检查。您也可以使用相同的方法禁用其他规则。
 
 ### 自定义规则值
 

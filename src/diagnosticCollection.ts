@@ -4,6 +4,7 @@ import { LintIssue } from './linter';
 export class DiagnosticCollection implements vscode.Disposable {
     
     private collection: vscode.DiagnosticCollection;
+    private decorationTypes: Map<string, vscode.TextEditorDecorationType> = new Map();
 
     constructor() {
         
@@ -38,7 +39,8 @@ export class DiagnosticCollection implements vscode.Disposable {
 
         this.collection.set(uri, diagnostics);
         
-        // 应用自定义装饰
+        // 清除旧的装饰，然后应用新的装饰
+        this.clearDecorations(uri);
         this.applyDecorations(uri, issues);
     }
 
@@ -60,6 +62,14 @@ export class DiagnosticCollection implements vscode.Disposable {
             isWholeLine: true, // 整行高亮
         });
         
+        // 保存装饰类型以便稍后清除
+        const uriString = uri.toString();
+        if (this.decorationTypes.has(uriString)) {
+            // 如果已经存在，先清除旧的
+            this.decorationTypes.get(uriString)?.dispose();
+        }
+        this.decorationTypes.set(uriString, highlightDecorationType);
+        
         // 创建装饰范围
         const decorations = issues.map(issue => {
             return {
@@ -72,6 +82,29 @@ export class DiagnosticCollection implements vscode.Disposable {
         
         // 应用装饰
         editor.setDecorations(highlightDecorationType, decorations);
+    }
+    
+    /**
+     * 清除指定URI的装饰
+     * @param uri 文档URI
+     */
+    private clearDecorations(uri: vscode.Uri): void {
+        
+        const uriString = uri.toString();
+        if (this.decorationTypes.has(uriString)) {
+            const decorationType = this.decorationTypes.get(uriString);
+            if (decorationType) {
+                // 找到对应的编辑器
+                const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri.toString() === uriString);
+                if (editor) {
+                    // 清除装饰
+                    editor.setDecorations(decorationType, []);
+                }
+                // 释放装饰类型
+                decorationType.dispose();
+                this.decorationTypes.delete(uriString);
+            }
+        }
     }
 
     /**
@@ -88,14 +121,25 @@ export class DiagnosticCollection implements vscode.Disposable {
         
         if (uri) {
             this.collection.delete(uri);
+            this.clearDecorations(uri);
         } else {
             this.collection.clear();
+            // 清除所有装饰
+            for (const [uriString, decorationType] of this.decorationTypes.entries()) {
+                const uri = vscode.Uri.parse(uriString);
+                this.clearDecorations(uri);
+            }
         }
     }
 
     public dispose(): void {
         
         this.collection.dispose();
+        // 释放所有装饰类型
+        for (const decorationType of this.decorationTypes.values()) {
+            decorationType.dispose();
+        }
+        this.decorationTypes.clear();
     }
 
     private getSeverity(severity: string): vscode.DiagnosticSeverity {

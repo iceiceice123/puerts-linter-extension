@@ -9,6 +9,7 @@ import { NoAnyRule } from './noAnyRule';
 import { NoEmptyFunctionsRule } from './noEmptyFunctionsRule';
 import { NamingConventionRule } from './namingConventionRule';
 import { FunctionEmptyLineRule } from './functionEmptyLineRule';
+import { TrailingCommaRule } from './trailingCommaRule';
 
 /**
  * 规则注册表，用于管理所有可用的规则
@@ -31,6 +32,7 @@ export class RuleRegistry {
         this.registerRule(new NoEmptyFunctionsRule());
         this.registerRule(new NamingConventionRule());
         this.registerRule(new FunctionEmptyLineRule());
+        this.registerRule(new TrailingCommaRule());
         // 在这里注册更多规则...
     }
     

@@ -42,7 +42,8 @@
             "noAny": true,
             "noEmptyFunctions": true,
             "namingConvention": true,
-            "functionEmptyLine": true
+            "functionEmptyLine": true,
+            "trailingComma": true
           },
           "description": "代码规范规则配置",
           "properties": {
@@ -89,7 +90,13 @@
             },
             "functionEmptyLine": {
               "type": "boolean",
+              "default": true,
               "description": "函数实现的首行跟函数名之间空一行"
+            },
+            "trailingComma": {
+              "type": "boolean",
+              "default": true,
+              "description": "枚举或对象的元素应该以逗号结尾"
             }
           }
         }

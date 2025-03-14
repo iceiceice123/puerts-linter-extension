@@ -13,18 +13,16 @@
 
 | 规则 ID | 描述 | 默认值 |
 |---------|------|--------|
-| maxLineLength | 最大行长度 | 100 |
+| maxLineLength | 最大行长度 | 200 |
 | indentSize | 缩进大小 | 2 |
 | useSpaces | 是否使用空格缩进 | true |
 | semicolons | 是否使用分号 | true |
-| quotes | 引号风格 | 'single' |
 | noConsole | 禁止使用console语句 | true |
 | noVar | 禁止使用var声明 | true |
 | noAny | 禁止使用any类型 | true |
 | noEmptyFunctions | 禁止使用空函数 | true |
 | namingConvention | 函数和变量的首字母必须小写，但是对于继承自UE的类首字母大写 | true |
 | functionEmptyLine | 函数实现的首行跟函数名之间空一行 | true |
-| trailingComma | 枚举或对象的元素应该以逗号结尾 | true |
 
 ## 安装方法
 
@@ -65,6 +63,35 @@
    - 点击扩展视图右上角的 `...` 菜单，选择 "从 VSIX 安装..."
    - 选择生成的 `.vsix` 文件
 
+## 开发指南
+
+### 构建和打包
+
+1. 克隆仓库
+2. 运行 `npm install` 安装依赖
+3. 运行 `npm run compile` 编译代码
+4. 运行 `npm run prepare-package` 升级版本号并编译
+5. 运行 `npm run package-only` 打包扩展
+
+### 版本管理
+
+扩展使用自动版本管理系统：
+
+- `npm run bump-version` - 自动将补丁版本号加 1
+- `npm run prepare-package` - 升级版本号并编译代码
+- `npm run package-only` - 只打包扩展，不升级版本号
+
+### 添加新规则
+
+要添加新的规则，请按照以下步骤操作：
+
+1. 在 `src/rules` 目录下创建新的规则文件，例如 `myNewRule.ts`
+2. 实现 `Rule` 接口
+3. 在 `src/rules/ruleRegistry.ts` 中注册新规则
+4. 在 `package.json` 中添加规则配置
+5. 在 `src/linter.ts` 的 `LinterRules` 接口中添加规则属性
+6. 在 README.md 中更新规则文档
+
 ## 使用方法
 
 1. 安装扩展后，它将自动检查您的 TypeScript 文件
@@ -104,18 +131,8 @@
 {
   "typescriptLinter.autoCheck": true,
   "typescriptLinter.rules": {
-    "maxLineLength": 100,
-    "indentSize": 2,
-    "useSpaces": true,
-    "semicolons": true,
-    "quotes": "single",
-    "noConsole": true,
-    "noVar": true,
-    "noAny": true,
-    "noEmptyFunctions": true,
-    "namingConvention": true,
-    "functionEmptyLine": true,
-    "trailingComma": true
+    "maxLineLength": 200,
+    "indentSize": 4
   }
 }
 ```
@@ -156,18 +173,8 @@
 {
   "typescriptLinter.autoCheck": true,
   "typescriptLinter.rules": {
-    "maxLineLength": 100,
-    "indentSize": 2,
-    "useSpaces": true,
-    "semicolons": true,
-    "quotes": "single",
-    "noConsole": true,
-    "noVar": true,
-    "noAny": true,
-    "noEmptyFunctions": true,
-    "namingConvention": true,
-    "functionEmptyLine": true,
-    "trailingComma": true
+    "maxLineLength": 200,
+    "indentSize": 4
   }
 }
 ```
@@ -201,9 +208,8 @@
 ```json
 {
   "typescriptLinter.rules": {
-    "maxLineLength": 120,         // 将最大行长度设置为 120
-    "indentSize": 4,              // 将缩进大小设置为 4 个空格
-    "quotes": "double"            // 使用双引号而不是单引号
+    "maxLineLength": 200,
+    "indentSize": 4
   }
 }
 ```

@@ -15,14 +15,13 @@ export interface LinterRules {
     indentSize?: number;
     useSpaces?: boolean;
     semicolons?: boolean;
-    quotes?: 'single' | 'double';
     noConsole?: boolean;
     noVar?: boolean;
     noAny?: boolean;
     noEmptyFunctions?: boolean;
     namingConvention?: boolean;
     functionEmptyLine?: boolean;
-    trailingComma?: boolean;
+    ueNamingConvention?: boolean;
     // 可以添加更多自定义规则
     [key: string]: any;
 }
@@ -57,22 +56,56 @@ export class TypeScriptLinter {
         return issues;
     }
     
-    /**
-     * 检查规则是否启用
-     * @param ruleId 规则ID
-     */
     private isRuleEnabled(ruleId: string): boolean {
         
-        const option = this.rules[ruleId];
-        return option !== undefined && option !== false;
+        switch (ruleId) {
+            case 'maxLineLength':
+                return this.rules.maxLineLength !== undefined && this.rules.maxLineLength > 0;
+            case 'indent':
+                return this.rules.indentSize !== undefined && this.rules.indentSize > 0;
+            case 'semicolons':
+                return this.rules.semicolons !== undefined;
+            case 'noConsole':
+                return this.rules.noConsole === true;
+            case 'noVar':
+                return this.rules.noVar === true;
+            case 'noAny':
+                return this.rules.noAny === true;
+            case 'noEmptyFunctions':
+                return this.rules.noEmptyFunctions === true;
+            case 'namingConvention':
+                return this.rules.namingConvention === true;
+            case 'functionEmptyLine':
+                return this.rules.functionEmptyLine === true;
+            case 'ueNamingConvention':
+                return this.rules.ueNamingConvention === true;
+            default:
+                return false;
+        }
     }
     
-    /**
-     * 获取规则的配置选项
-     * @param ruleId 规则ID
-     */
     private getRuleOptions(ruleId: string): any {
         
-        return this.rules[ruleId];
+        switch (ruleId) {
+            case 'maxLineLength':
+                return this.rules.maxLineLength;
+            case 'indent':
+                return {
+                    indentSize: this.rules.indentSize,
+                    useSpaces: this.rules.useSpaces
+                };
+            case 'semicolons':
+                return this.rules.semicolons;
+            case 'noConsole':
+            case 'noVar':
+            case 'noAny':
+            case 'noEmptyFunctions':
+            case 'namingConvention':
+            case 'functionEmptyLine':
+            case 'ueNamingConvention':
+                return true;
+            default:
+                return undefined;
+        }
     }
 }

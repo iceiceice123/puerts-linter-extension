@@ -2,14 +2,13 @@ import { Rule } from './ruleInterface';
 import { MaxLineLengthRule } from './maxLineLengthRule';
 import { IndentRule } from './indentRule';
 import { SemicolonsRule } from './semicolonsRule';
-import { QuotesRule } from './quotesRule';
 import { NoConsoleRule } from './noConsoleRule';
 import { NoVarRule } from './noVarRule';
 import { NoAnyRule } from './noAnyRule';
 import { NoEmptyFunctionsRule } from './noEmptyFunctionsRule';
 import { NamingConventionRule } from './namingConventionRule';
 import { FunctionEmptyLineRule } from './functionEmptyLineRule';
-import { TrailingCommaRule } from './trailingCommaRule';
+import { UENamingConventionRule } from './ueNamingConventionRule';
 
 /**
  * 规则注册表，用于管理所有可用的规则
@@ -25,14 +24,13 @@ export class RuleRegistry {
         this.registerRule(new MaxLineLengthRule());
         this.registerRule(new IndentRule());
         this.registerRule(new SemicolonsRule());
-        this.registerRule(new QuotesRule());
         this.registerRule(new NoConsoleRule());
         this.registerRule(new NoVarRule());
         this.registerRule(new NoAnyRule());
         this.registerRule(new NoEmptyFunctionsRule());
         this.registerRule(new NamingConventionRule());
         this.registerRule(new FunctionEmptyLineRule());
-        this.registerRule(new TrailingCommaRule());
+        this.registerRule(new UENamingConventionRule());
         // 在这里注册更多规则...
     }
     
@@ -57,12 +55,12 @@ export class RuleRegistry {
     }
     
     /**
-     * 取消注册一个规则
-     * @param ruleId 要取消注册的规则ID
+     * 获取指定ID的规则
+     * @param id 规则ID
      */
-    public unregisterRule(ruleId: string): void {
+    public getRule(id: string): Rule | undefined {
         
-        this.rules.delete(ruleId);
+        return this.rules.get(id);
     }
     
     /**
@@ -74,20 +72,11 @@ export class RuleRegistry {
     }
     
     /**
-     * 获取指定ID的规则
-     * @param ruleId 规则ID
+     * 检查是否存在指定ID的规则
+     * @param id 规则ID
      */
-    public getRule(ruleId: string): Rule | undefined {
+    public hasRule(id: string): boolean {
         
-        return this.rules.get(ruleId);
-    }
-    
-    /**
-     * 检查规则是否已注册
-     * @param ruleId 规则ID
-     */
-    public hasRule(ruleId: string): boolean {
-        
-        return this.rules.has(ruleId);
+        return this.rules.has(id);
     }
 }

@@ -32,6 +32,7 @@ export class TrailingCommaRule implements Rule {
         let inEnum = false;
         let inObject = false;
         let braceLevel = 0;
+        let inIfStatement = false;
         
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
@@ -41,6 +42,11 @@ export class TrailingCommaRule implements Rule {
                 continue;
             }
             
+            // 检查是否是 if 语句
+            if (line.match(/^\s*if\s*\(/)) {
+                inIfStatement = true;
+            }
+            
             // 检查是否进入或离开枚举定义
             if (line.match(/enum\s+\w+\s*\{/)) {
                 inEnum = true;
@@ -48,12 +54,20 @@ export class TrailingCommaRule implements Rule {
             }
             
             // 检查是否进入对象构造
+            // 排除 if 语句条件中的大括号
             if (line.match(/(\{|\[)/) && !line.includes('import') && !line.includes('//')) {
                 const openBraces = (line.match(/\{|\[/g) || []).length;
                 braceLevel += openBraces;
                 
-                if (braceLevel > 0 && !inEnum) {
-                    inObject = true;
+                // 如果是 if 语句中的大括号，不认为是对象构造
+                if (inIfStatement && line.includes('{')) {
+                    inIfStatement = false; // 重置 if 语句标记
+                } else if (braceLevel > 0 && !inEnum && !inIfStatement) {
+                    // 检查是否是对象字面量定义而不是代码块
+                    // 对象字面量通常有键值对格式 key: value 或者是数组 [item1, item2]
+                    if (line.match(/[\w'"]+\s*:/)) {
+                        inObject = true;
+                    }
                 }
             }
             

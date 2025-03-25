@@ -37,6 +37,11 @@ export class TrailingCommaRule implements Rule {
         for (let i = 0; i < lines.length; i++) {
             const line = lines[i].trim();
             
+            // 跳过注释行
+            if (this.isCommentLine(line)) {
+                continue;
+            }
+            
             // 忽略装饰器行
             if (line.startsWith('@')) {
                 continue;
@@ -55,7 +60,7 @@ export class TrailingCommaRule implements Rule {
             
             // 检查是否进入对象构造
             // 排除 if 语句条件中的大括号
-            if (line.match(/(\{|\[)/) && !line.includes('import') && !line.includes('//')) {
+            if (line.match(/(\{|\[)/) && !line.includes('import') && !this.isCommentLine(line)) {
                 const openBraces = (line.match(/\{|\[/g) || []).length;
                 braceLevel += openBraces;
                 
@@ -86,11 +91,9 @@ export class TrailingCommaRule implements Rule {
             // 如果在枚举或对象构造中，检查行是否以逗号结尾
             if ((inEnum || inObject) && line.length > 0) {
                 // 忽略注释行、空行、结束大括号行、包含注释的行和装饰器行
-                if (!line.startsWith('//') && 
+                if (!this.isCommentLine(line) && 
                     !line.match(/^\s*$/) && 
                     !line.match(/^\s*[\}\]]/) && 
-                    !line.includes('*/') &&
-                    !line.match(/^\s*\/\//) &&
                     !line.includes('@')) {  // 忽略包含装饰器的行
                     
                     // 检查是否是枚举或对象的最后一个元素（下一个非空行是结束括号）
@@ -98,13 +101,19 @@ export class TrailingCommaRule implements Rule {
                     for (let j = i + 1; j < lines.length; j++) {
                         const nextLine = lines[j].trim();
                         if (nextLine.length > 0) {
+                            // 跳过注释行
+                            if (this.isCommentLine(nextLine)) {
+                                continue;
+                            }
                             isLastElement = nextLine.startsWith('}') || nextLine.startsWith(']');
                             break;
                         }
                     }
                     
                     // 如果不是最后一个元素，则必须以逗号结尾
-                    if (!isLastElement && !line.endsWith(',') && !line.match(/,\s*\/\//)) {
+                    // 检查行是否以逗号结尾，但忽略行内注释后的部分
+                    const lineWithoutComment = this.removeInlineComment(line);
+                    if (!isLastElement && !lineWithoutComment.endsWith(',')) {
                         issues.push({
                             line: i,
                             character: line.length,
@@ -119,5 +128,56 @@ export class TrailingCommaRule implements Rule {
         }
         
         return issues;
+    }
+    
+    /**
+     * 检查一行是否是注释行
+     * @param line 要检查的行
+     * @returns 如果是注释行则返回 true，否则返回 false
+     */
+    private isCommentLine(line: string): boolean {
+        
+        // 检查是否是单行注释 (//)
+        if (line.trim().startsWith('//')) {
+            return true;
+        }
+        
+        // 检查是否是多行注释的开始 (/* 或 /**) 或结束 (*/)
+        if (line.trim().startsWith('/*') || line.trim().startsWith('*') || line.trim().endsWith('*/')) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 移除行内注释
+     * @param line 要处理的行
+     * @returns 移除注释后的行
+     */
+    private removeInlineComment(line: string): string {
+        
+        // 查找行内注释的起始位置
+        const commentPos = line.indexOf('//');
+        if (commentPos !== -1) {
+            // 返回注释前的部分
+            return line.substring(0, commentPos).trim();
+        }
+        
+        // 查找多行注释的起始位置
+        const multiCommentPos = line.indexOf('/*');
+        if (multiCommentPos !== -1) {
+            // 查找多行注释的结束位置
+            const endCommentPos = line.indexOf('*/', multiCommentPos);
+            if (endCommentPos !== -1) {
+                // 如果多行注释在同一行内结束，则返回注释前的部分和注释后的部分
+                return (line.substring(0, multiCommentPos) + line.substring(endCommentPos + 2)).trim();
+            } else {
+                // 如果多行注释没有在同一行内结束，则返回注释前的部分
+                return line.substring(0, multiCommentPos).trim();
+            }
+        }
+        
+        return line;
     }
 }

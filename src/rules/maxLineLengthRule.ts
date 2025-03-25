@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { Rule } from './ruleInterface';
 import { LintIssue } from '../linter';
+import { CommentUtils } from '../utils/commentUtils';
 
 export class MaxLineLengthRule implements Rule {
     
@@ -8,11 +9,12 @@ export class MaxLineLengthRule implements Rule {
     description = '检查行长度是否超过最大限制';
     severity = 'warning' as const;
     
-    check(document: vscode.TextDocument, options: number): LintIssue[] {
+    check(document: vscode.TextDocument, options: number | boolean): LintIssue[] {
         
         const issues: LintIssue[] = [];
         
-        if (!options || options <= 0) {
+        // 如果 options 为 false 或不是正数，则不进行检查
+        if (options === false || typeof options !== 'number' || options <= 0) {
             return issues;
         }
         
@@ -21,6 +23,11 @@ export class MaxLineLengthRule implements Rule {
         for (let i = 0; i < document.lineCount; i++) {
             const line = document.lineAt(i);
             const lineText = line.text;
+            
+            // 跳过注释行
+            if (CommentUtils.isCommentLine(lineText)) {
+                continue;
+            }
             
             if (lineText.length > maxLength) {
                 issues.push({

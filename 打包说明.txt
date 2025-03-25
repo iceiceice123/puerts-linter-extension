@@ -1,0 +1,36 @@
+TypeScript Linter 扩展打包说明
+===========================
+
+本目录包含两个打包脚本，您可以根据自己的喜好选择使用其中一个：
+
+1. package-extension.bat - Windows批处理脚本
+   - 双击此文件即可运行打包流程
+   - 适合所有Windows系统
+
+2. package-extension.ps1 - PowerShell脚本
+   - 右键点击此文件，选择"使用PowerShell运行"
+   - 提供更友好的彩色输出和更详细的错误信息
+   - 需要Windows系统允许运行PowerShell脚本
+   
+   如果您无法运行PowerShell脚本，可能需要更改执行策略：
+   1. 以管理员身份打开PowerShell
+   2. 运行命令：Set-ExecutionPolicy RemoteSigned
+   3. 输入Y确认更改
+
+打包流程包括以下步骤：
+1. 检查必要的工具是否已安装（Node.js、npm、vsce）
+2. 安装项目依赖
+3. 自动增加扩展版本号
+4. 编译TypeScript代码
+5. 打包生成.vsix文件
+
+打包完成后，您将在当前目录中找到一个.vsix文件，例如：
+typescript-linter-0.0.18.vsix
+
+您可以通过以下方式安装此扩展：
+1. 在VS Code中，点击扩展视图
+2. 点击"..."菜单，选择"从VSIX安装..."
+3. 选择生成的.vsix文件
+
+或者通过命令行安装：
+code --install-extension typescript-linter-0.0.18.vsix

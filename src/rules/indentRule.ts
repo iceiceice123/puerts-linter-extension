@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { Rule } from './ruleInterface';
 import { LintIssue } from '../linter';
+import { CommentUtils } from '../utils/commentUtils';
 
 export interface IndentOptions {
     indentSize: number;
@@ -20,7 +21,14 @@ export class IndentRule implements Rule {
         
         for (let i = 0; i < document.lineCount; i++) {
             const line = document.lineAt(i);
-            const indentMatch = line.text.match(/^(\s+)/);
+            const lineText = line.text;
+            
+            // 跳过注释行
+            if (CommentUtils.isCommentLine(lineText)) {
+                continue;
+            }
+            
+            const indentMatch = lineText.match(/^(\s+)/);
             
             if (indentMatch) {
                 const indent = indentMatch[1];

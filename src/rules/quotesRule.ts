@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { Rule } from './ruleInterface';
 import { LintIssue } from '../linter';
+import { CommentUtils } from '../utils/commentUtils';
 
 export class QuotesRule implements Rule {
     
@@ -17,6 +18,7 @@ export class QuotesRule implements Rule {
         }
         
         const text = document.getText();
+        const lines = text.split(/\r?\n/);
         
         if (options === 'single') {
             // 查找所有双引号字符串
@@ -31,6 +33,13 @@ export class QuotesRule implements Rule {
                 }
                 
                 const pos = document.positionAt(match.index);
+                
+                // 检查是否在注释行中
+                const line = lines[pos.line];
+                if (CommentUtils.isInComment(line, pos.character)) {
+                    continue;
+                }
+                
                 issues.push({
                     line: pos.line,
                     character: pos.character,
@@ -47,6 +56,13 @@ export class QuotesRule implements Rule {
             
             while ((match = singleQuoteRegex.exec(text)) !== null) {
                 const pos = document.positionAt(match.index);
+                
+                // 检查是否在注释行中
+                const line = lines[pos.line];
+                if (CommentUtils.isInComment(line, pos.character)) {
+                    continue;
+                }
+                
                 issues.push({
                     line: pos.line,
                     character: pos.character,

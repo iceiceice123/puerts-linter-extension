@@ -2,7 +2,7 @@
   "name": "typescript-linter",
   "displayName": "TypeScript Linter",
   "description": "A custom linter for TypeScript",
-  "version": "0.0.17",
+  "version": "0.0.19",
   "publisher": "typescript-linter-author",
   "engines": {
     "vscode": "^1.64.0"
@@ -33,7 +33,7 @@
         "typescriptLinter.rules": {
           "type": "object",
           "default": {
-            "maxLineLength": 200,
+            "maxLineLength": false,
             "indentSize": 2,
             "useSpaces": true,
             "semicolons": true,
@@ -48,9 +48,9 @@
           "description": "代码规范规则配置",
           "properties": {
             "maxLineLength": {
-              "type": "number",
-              "default": 200,
-              "description": "最大行长度"
+              "type": ["number", "boolean"],
+              "default": false,
+              "description": "最大行长度，设置为 false 可禁用此检查"
             },
             "indentSize": {
               "type": "number",
@@ -121,6 +121,6 @@
     "glob": "^7.1.7",
     "mocha": "^8.4.0",
     "typescript": "^4.3.2",
-    "vscode-test": "^1.5.2"
+    "@vscode/test-electron": "^2.3.9"
   }
 }

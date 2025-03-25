@@ -25,7 +25,7 @@ export class SemicolonsRule implements Rule {
             const lineText = line.text.trim();
             
             // 忽略注释行和空行
-            if (lineText === '' || lineText.startsWith('//') || lineText.startsWith('/*')) {
+            if (lineText === '' || this.isCommentLine(lineText)) {
                 continue;
             }
             
@@ -49,14 +49,21 @@ export class SemicolonsRule implements Rule {
                 continue;
             }
             
-            // 忽略多行函数调用或对象字面量的中间行
-            if (this.isPartOfMultilineExpression(lines, i)) {
+            // 忽略以冒号结尾的行（对象属性或case语句）
+            if (lineText.endsWith(':')) {
                 continue;
             }
             
+            // 忽略多行函数调用或对象字面量的中间行
+            if (this.isPartOfMultilineExpression(lineText, i, lines)) {
+                continue;
+            }
+            
+            // 检查是否以分号结尾
             const hasSemicolon = lineText.endsWith(';');
             
             if (requireSemicolon && !hasSemicolon) {
+                // 需要分号但没有
                 issues.push({
                     line: i,
                     character: line.text.length,
@@ -65,6 +72,7 @@ export class SemicolonsRule implements Rule {
                     ruleId: this.id
                 });
             } else if (!requireSemicolon && hasSemicolon) {
+                // 不需要分号但有
                 issues.push({
                     line: i,
                     character: line.text.length - 1,
@@ -80,23 +88,41 @@ export class SemicolonsRule implements Rule {
     }
     
     /**
-     * 检查一行是否是多行表达式的一部分（如多行函数调用、对象字面量等）
-     * @param lines 所有行
+     * 检查一行是否是多行表达式的一部分（如多行函数调用或对象字面量）
+     * @param lineText 当前行文本
      * @param lineIndex 当前行索引
+     * @param lines 所有行
      * @returns 如果是多行表达式的一部分则返回 true，否则返回 false
      */
-    private isPartOfMultilineExpression(lines: string[], lineIndex: number): boolean {
-        const line = lines[lineIndex].trim();
+    private isPartOfMultilineExpression(lineText: string, lineIndex: number, lines: string[]): boolean {
         
-        // 检查这一行是否是多行函数调用或对象字面量的中间行
-        
-        // 如果当前行以逗号结尾，可能是多行函数调用或对象字面量的一部分
-        if (line.endsWith(',')) {
+        // 如果行以逗号结尾，可能是多行表达式的一部分
+        if (lineText.endsWith(',')) {
             return true;
         }
         
-        // 如果当前行包含左括号但不包含右括号和分号，可能是多行函数调用的开始
-        if (line.includes('(') && !line.includes(');') && !line.endsWith(';')) {
+        // 如果行以操作符结尾，可能是多行表达式的一部分
+        if (lineText.match(/[+\-*/%&|^<>=?:]$/)) {
+            return true;
+        }
+        
+        // 如果行以左括号结尾，可能是多行函数调用的开始
+        if (lineText.endsWith('(')) {
+            return true;
+        }
+        
+        // 如果行以右括号开头，可能是多行函数调用的结束
+        if (lineText.startsWith(')')) {
+            return true;
+        }
+        
+        // 如果行包含左括号但不包含右括号和分号，可能是多行函数调用的开始
+        if (lineText.includes('(') && !lineText.includes(')') && !lineText.endsWith(';')) {
+            return true;
+        }
+        
+        // 如果行包含右括号但不包含左括号和分号，可能是多行函数调用的结束
+        if (lineText.includes(')') && !lineText.includes('(') && !lineText.endsWith(';')) {
             return true;
         }
         
@@ -104,18 +130,18 @@ export class SemicolonsRule implements Rule {
         if (lineIndex > 0) {
             const prevLine = lines[lineIndex - 1].trim();
             
-            // 如果前一行以逗号结尾，当前行可能是多行函数调用或对象字面量的一部分
+            // 如果前一行以逗号结尾，当前行可能是多行表达式的一部分
             if (prevLine.endsWith(',')) {
                 return true;
             }
             
-            // 如果前一行包含左括号但不包含右括号和分号，当前行可能是多行函数调用的一部分
-            if (prevLine.includes('(') && !prevLine.includes(');') && !prevLine.endsWith(';')) {
+            // 如果前一行以操作符结尾，当前行可能是多行表达式的一部分
+            if (prevLine.match(/[+\-*/%&|^<>=?:]$/)) {
                 return true;
             }
             
-            // 如果前一行以左大括号结尾，当前行可能是对象字面量的一部分
-            if (prevLine.endsWith('{')) {
+            // 如果前一行以左括号结尾，当前行可能是多行函数调用的一部分
+            if (prevLine.endsWith('(')) {
                 return true;
             }
         }
@@ -124,15 +150,35 @@ export class SemicolonsRule implements Rule {
         if (lineIndex < lines.length - 1) {
             const nextLine = lines[lineIndex + 1].trim();
             
-            // 如果下一行以右括号和分号结尾，当前行可能是多行函数调用的一部分
-            if (nextLine.includes('});') || nextLine.includes(');')) {
+            // 如果下一行以右括号开头，当前行可能是多行函数调用的一部分
+            if (nextLine.startsWith(')')) {
                 return true;
             }
             
-            // 如果下一行以右大括号开头，当前行可能是对象字面量的一部分
-            if (nextLine.startsWith('}')) {
+            // 如果下一行以逗号开头，当前行可能是多行表达式的一部分
+            if (nextLine.startsWith(',')) {
                 return true;
             }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 检查一行是否是注释行
+     * @param line 要检查的行
+     * @returns 如果是注释行则返回 true，否则返回 false
+     */
+    private isCommentLine(line: string): boolean {
+        
+        // 检查是否是单行注释 (//)
+        if (line.trim().startsWith('//')) {
+            return true;
+        }
+        
+        // 检查是否是多行注释的开始 (/* 或 /**) 或结束 (*/)
+        if (line.trim().startsWith('/*') || line.trim().startsWith('*') || line.trim().endsWith('*/')) {
+            return true;
         }
         
         return false;

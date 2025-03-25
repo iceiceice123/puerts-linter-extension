@@ -12,7 +12,7 @@ export interface LintIssue {
 
 export interface LinterRules {
     maxLineLength?: number | boolean;
-    indentSize?: number;
+    indentSize?: number | boolean;
     useSpaces?: boolean;
     semicolons?: boolean;
     noConsole?: boolean;
@@ -62,7 +62,7 @@ export class TypeScriptLinter {
             case 'maxLineLength':
                 return this.rules.maxLineLength !== false && this.rules.maxLineLength !== undefined && (typeof this.rules.maxLineLength !== 'number' || this.rules.maxLineLength > 0);
             case 'indent':
-                return this.rules.indentSize !== undefined && this.rules.indentSize > 0;
+                return this.rules.indentSize !== false && this.rules.indentSize !== undefined && (typeof this.rules.indentSize !== 'number' || this.rules.indentSize > 0);
             case 'semicolons':
                 return this.rules.semicolons !== undefined;
             case 'noConsole':

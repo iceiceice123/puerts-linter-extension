@@ -2,7 +2,7 @@
   "name": "typescript-linter",
   "displayName": "TypeScript Linter",
   "description": "A custom linter for TypeScript",
-  "version": "0.0.19",
+  "version": "0.0.23",
   "publisher": "typescript-linter-author",
   "engines": {
     "vscode": "^1.64.0"
@@ -34,8 +34,8 @@
           "type": "object",
           "default": {
             "maxLineLength": false,
-            "indentSize": 2,
-            "useSpaces": true,
+            "indentSize": false,
+            "useSpaces": false,
             "semicolons": true,
             "noConsole": true,
             "noVar": true,
@@ -48,17 +48,25 @@
           "description": "代码规范规则配置",
           "properties": {
             "maxLineLength": {
-              "type": ["number", "boolean"],
+              "type": [
+                "number",
+                "boolean"
+              ],
               "default": false,
               "description": "最大行长度，设置为 false 可禁用此检查"
             },
             "indentSize": {
-              "type": "number",
-              "description": "缩进大小，单位为空格数"
+              "type": [
+                "number",
+                "boolean"
+              ],
+              "default": false,
+              "description": "缩进大小，单位为空格数，设置为 false 可禁用缩进检查"
             },
             "useSpaces": {
               "type": "boolean",
-              "description": "是否使用空格进行缩进，false表示使用制表符"
+              "default": false,
+              "description": "是否使用空格进行缩进，false表示使用制表符，当缩进检查禁用时此设置无效"
             },
             "semicolons": {
               "type": "boolean",

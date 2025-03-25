@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { Rule } from './ruleInterface';
 import { LintIssue } from '../linter';
+import { CommentUtils } from '../utils/commentUtils';
 
 export class UENamingConventionRule implements Rule {
     
@@ -79,8 +80,19 @@ export class UENamingConventionRule implements Rule {
             isUEDerivedClass(className);
         }
         
+        // 获取所有装饰器位置
+        const decoratorRegex = /@[\w.]+(?:\(\))?/g;
+        const decoratorPositions = new Map<number, string>(); // 行号 -> 装饰器名称
+        let decoratorMatch;
+        
+        while ((decoratorMatch = decoratorRegex.exec(text)) !== null) {
+            const decoratorPos = document.positionAt(decoratorMatch.index);
+            const decoratorLine = decoratorPos.line;
+            decoratorPositions.set(decoratorLine, decoratorMatch[0]);
+        }
+        
         // 检查方法声明
-        const methodRegex = /(?:public|private|protected|static|async|override)?\s+(\w+)\s*\([^)]*\)\s*{/g;
+        const methodRegex = /(?:public|private|protected|static|async|override)?\s+(?!if|for|while|switch|return|throw|break|continue|new)(\w+)\s*\([^)]*\)\s*{/g;
         let methodMatch;
         
         while ((methodMatch = methodRegex.exec(text)) !== null) {
@@ -99,6 +111,29 @@ export class UENamingConventionRule implements Rule {
                 // 查找方法所在的类
                 const methodPos = document.positionAt(methodMatch.index);
                 const methodLine = methodPos.line;
+                
+                // 检查方法上方是否有 UE 装饰器
+                let hasUEDecorator = false;
+                for (let i = methodLine - 1; i >= Math.max(0, methodLine - 5); i--) {
+                    if (decoratorPositions.has(i)) {
+                        const decorator = decoratorPositions.get(i) || '';
+                        if (decorator.startsWith('@UE.')) {
+                            hasUEDecorator = true;
+                            break;
+                        }
+                    }
+                    
+                    // 如果遇到非空行且不是装饰器，则停止向上查找
+                    const lineText = document.lineAt(i).text.trim();
+                    if (lineText && !lineText.startsWith('@')) {
+                        break;
+                    }
+                }
+                
+                // 如果方法有 UE 装饰器，则不检查命名规则
+                if (hasUEDecorator) {
+                    continue;
+                }
                 
                 // 查找最近的类声明
                 const classDeclarationRegex = /class\s+(\w+)(?:\s+extends\s+(\w+(?:\.\w+)*))?/g;
@@ -130,45 +165,91 @@ export class UENamingConventionRule implements Rule {
             }
         }
         
-        // 检查变量声明
-        const varRegex = /(?:let|const|var)\s+(\w+)/g;
-        let varMatch;
+        // 检查属性声明
+        const propRegex = /(?:public|private|protected|static)?\s+(?:readonly)?\s+(\w+)(?:\s*:\s*[\w\[\]<>.]+)?(?:\s*=\s*[\w\[\]<>.(){}]+)?;/g;
+        let propMatch;
         
-        while ((varMatch = varRegex.exec(text)) !== null) {
-            const varName = varMatch[1];
+        while ((propMatch = propRegex.exec(text)) !== null) {
+            const propName = propMatch[1];
             
-            // 检查变量名是否以小写字母开头
-            if (/^[a-z]/.test(varName)) {
+            // 检查属性名是否以小写字母开头
+            if (/^[a-z]/.test(propName)) {
                 // 检查是否在UE派生类中
-                let isInUEClass = true; // 在 UE 脚本中，默认所有变量都在 UE 类中
+                let isInUEClass = true; // 在 UE 脚本中，默认所有属性都在 UE 类中
                 
-                // 查找变量所在的类
-                const varPos = document.positionAt(varMatch.index);
-                const varLine = varPos.line;
+                // 查找属性所在的类
+                const propPos = document.positionAt(propMatch.index);
+                const propLine = propPos.line;
                 
                 // 查找最近的类声明
                 const classDeclarationRegex = /class\s+(\w+)(?:\s+extends\s+(\w+(?:\.\w+)*))?/g;
                 let classDeclarationMatch;
-                let nearestClassBeforeVarLine = '';
-                let nearestClassLineBeforeVarLine = -1;
+                let nearestClassBeforePropLine = '';
+                let nearestClassLineBeforePropLine = -1;
                 
                 while ((classDeclarationMatch = classDeclarationRegex.exec(text)) !== null) {
                     const classPos = document.positionAt(classDeclarationMatch.index);
                     const classLine = classPos.line;
                     
-                    if (classLine < varLine && classLine > nearestClassLineBeforeVarLine) {
-                        nearestClassLineBeforeVarLine = classLine;
-                        nearestClassBeforeVarLine = classDeclarationMatch[1];
+                    if (classLine < propLine && classLine > nearestClassLineBeforePropLine) {
+                        nearestClassLineBeforePropLine = classLine;
+                        nearestClassBeforePropLine = classDeclarationMatch[1];
                     }
                 }
                 
                 if (isInUEClass) {
-                    const pos = document.positionAt(varMatch.index + varMatch[0].indexOf(varName));
+                    const pos = document.positionAt(propMatch.index + propMatch[0].indexOf(propName));
                     issues.push({
                         line: pos.line,
                         character: pos.character,
-                        length: varName.length,
-                        message: '在UE类中，变量名应该以大写字母开头',
+                        length: propName.length,
+                        message: '在UE类中，属性名应该以大写字母开头',
+                        severity: this.severity,
+                        ruleId: this.id
+                    });
+                }
+            }
+        }
+        
+        // 检查局部变量声明
+        const localVarRegex = /(?:let|const|var)\s+(\w+)(?:\s*:\s*[\w\[\]<>.]+)?(?:\s*=\s*[\w\[\]<>.(){}]+)?;/g;
+        let localVarMatch;
+        
+        while ((localVarMatch = localVarRegex.exec(text)) !== null) {
+            const localVarName = localVarMatch[1];
+            
+            // 检查局部变量名是否以小写字母开头
+            if (/^[a-z]/.test(localVarName)) {
+                // 检查是否在UE派生类中
+                let isInUEClass = true; // 在 UE 脚本中，默认所有局部变量都在 UE 类中
+                
+                // 查找局部变量所在的类
+                const localVarPos = document.positionAt(localVarMatch.index);
+                const localVarLine = localVarPos.line;
+                
+                // 查找最近的类声明
+                const classDeclarationRegex = /class\s+(\w+)(?:\s+extends\s+(\w+(?:\.\w+)*))?/g;
+                let classDeclarationMatch;
+                let nearestClassBeforeLocalVarLine = '';
+                let nearestClassLineBeforeLocalVarLine = -1;
+                
+                while ((classDeclarationMatch = classDeclarationRegex.exec(text)) !== null) {
+                    const classPos = document.positionAt(classDeclarationMatch.index);
+                    const classLine = classPos.line;
+                    
+                    if (classLine < localVarLine && classLine > nearestClassLineBeforeLocalVarLine) {
+                        nearestClassLineBeforeLocalVarLine = classLine;
+                        nearestClassBeforeLocalVarLine = classDeclarationMatch[1];
+                    }
+                }
+                
+                if (isInUEClass) {
+                    const pos = document.positionAt(localVarMatch.index + localVarMatch[0].indexOf(localVarName));
+                    issues.push({
+                        line: pos.line,
+                        character: pos.character,
+                        length: localVarName.length,
+                        message: '在UE类中，局部变量名应该以大写字母开头',
                         severity: this.severity,
                         ruleId: this.id
                     });

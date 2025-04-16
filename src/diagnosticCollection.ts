@@ -14,15 +14,25 @@ export class DiagnosticCollection implements vscode.Disposable {
     public set(uri: vscode.Uri, issues: LintIssue[]): void {
         
         const diagnostics: vscode.Diagnostic[] = issues.map(issue => {
-            // 创建整行范围的诊断
+            // 创建诊断范围，如果提供了length，则使用精确范围
             const line = issue.line;
-            const lineRange = new vscode.Range(
-                line, 0,
-                line, Number.MAX_SAFE_INTEGER
-            );
+            let range;
+            
+            if (issue.length !== undefined) {
+                range = new vscode.Range(
+                    line, issue.character,
+                    line, issue.character + issue.length
+                );
+            } else {
+                // 如果没有提供length，则使用整行范围
+                range = new vscode.Range(
+                    line, 0,
+                    line, Number.MAX_SAFE_INTEGER
+                );
+            }
             
             const diagnostic = new vscode.Diagnostic(
-                lineRange,
+                range,
                 issue.message,
                 this.getSeverity(issue.severity)
             );
@@ -30,9 +40,10 @@ export class DiagnosticCollection implements vscode.Disposable {
             diagnostic.source = 'TypeScript Linter';
             diagnostic.code = issue.ruleId;
             
-            // 设置自定义装饰，使用亮黄色背景
-            const decoration = { backgroundColor: 'rgba(255, 255, 0, 0.3)' };
-            diagnostic.tags = [vscode.DiagnosticTag.Unnecessary]; // 这会使波浪线变淡
+            // 对于行尾空格规则，添加特殊标记
+            if (issue.ruleId === 'noTrailingWhitespace') {
+                diagnostic.tags = [vscode.DiagnosticTag.Unnecessary];
+            }
             
             return diagnostic;
         });
@@ -56,7 +67,13 @@ export class DiagnosticCollection implements vscode.Disposable {
             return;
         }
         
-        // 创建装饰类型
+        // 创建行尾空格的装饰类型
+        const trailingWhitespaceDecorationType = vscode.window.createTextEditorDecorationType({
+            backgroundColor: 'rgba(255, 0, 0, 0.3)', // 红色背景，更明显
+            isWholeLine: false, // 不是整行高亮
+        });
+        
+        // 创建其他问题的装饰类型
         const highlightDecorationType = vscode.window.createTextEditorDecorationType({
             backgroundColor: 'rgba(255, 255, 0, 0.3)', // 亮黄色背景
             isWholeLine: true, // 整行高亮
@@ -70,20 +87,43 @@ export class DiagnosticCollection implements vscode.Disposable {
         }
         this.decorationTypes.set(uriString, highlightDecorationType);
         
-        // 创建装饰范围
-        const decorations = issues.map(issue => {
-            return {
-                range: new vscode.Range(
-                    issue.line, 0,
-                    issue.line, Number.MAX_SAFE_INTEGER
-                )
-            };
+        // 分类装饰
+        const trailingWhitespaceDecorations: vscode.DecorationOptions[] = [];
+        const otherDecorations: vscode.DecorationOptions[] = [];
+        
+        issues.forEach(issue => {
+            if (issue.ruleId === 'noTrailingWhitespace' && issue.length !== undefined) {
+                // 行尾空格问题
+                trailingWhitespaceDecorations.push({
+                    range: new vscode.Range(
+                        issue.line, issue.character,
+                        issue.line, issue.character + issue.length
+                    ),
+                    hoverMessage: issue.message
+                });
+            } else {
+                // 其他问题
+                otherDecorations.push({
+                    range: new vscode.Range(
+                        issue.line, 0,
+                        issue.line, Number.MAX_SAFE_INTEGER
+                    )
+                });
+            }
         });
         
         // 应用装饰
-        editor.setDecorations(highlightDecorationType, decorations);
+        editor.setDecorations(trailingWhitespaceDecorationType, trailingWhitespaceDecorations);
+        editor.setDecorations(highlightDecorationType, otherDecorations);
+        
+        // 保存行尾空格装饰类型
+        const trailingWhitespaceKey = uriString + '-trailingWhitespace';
+        if (this.decorationTypes.has(trailingWhitespaceKey)) {
+            this.decorationTypes.get(trailingWhitespaceKey)?.dispose();
+        }
+        this.decorationTypes.set(trailingWhitespaceKey, trailingWhitespaceDecorationType);
     }
-    
+
     /**
      * 清除指定URI的装饰
      * @param uri 文档URI
@@ -91,6 +131,8 @@ export class DiagnosticCollection implements vscode.Disposable {
     private clearDecorations(uri: vscode.Uri): void {
         
         const uriString = uri.toString();
+        
+        // 清除常规装饰
         if (this.decorationTypes.has(uriString)) {
             const decorationType = this.decorationTypes.get(uriString);
             if (decorationType) {
@@ -100,10 +142,25 @@ export class DiagnosticCollection implements vscode.Disposable {
                     // 清除装饰
                     editor.setDecorations(decorationType, []);
                 }
-                // 释放装饰类型
                 decorationType.dispose();
-                this.decorationTypes.delete(uriString);
             }
+            this.decorationTypes.delete(uriString);
+        }
+        
+        // 清除行尾空格装饰
+        const trailingWhitespaceKey = uriString + '-trailingWhitespace';
+        if (this.decorationTypes.has(trailingWhitespaceKey)) {
+            const decorationType = this.decorationTypes.get(trailingWhitespaceKey);
+            if (decorationType) {
+                // 找到对应的编辑器
+                const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri.toString() === uriString);
+                if (editor) {
+                    // 清除装饰
+                    editor.setDecorations(decorationType, []);
+                }
+                decorationType.dispose();
+            }
+            this.decorationTypes.delete(trailingWhitespaceKey);
         }
     }
 

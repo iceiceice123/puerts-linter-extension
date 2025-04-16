@@ -2,7 +2,7 @@
   "name": "typescript-linter",
   "displayName": "TypeScript Linter",
   "description": "A custom linter for TypeScript",
-  "version": "0.0.23",
+  "version": "0.0.26",
   "publisher": "typescript-linter-author",
   "engines": {
     "vscode": "^1.64.0"
@@ -43,7 +43,9 @@
             "noEmptyFunctions": true,
             "namingConvention": true,
             "functionEmptyLine": true,
-            "ueNamingConvention": true
+            "ueNamingConvention": true,
+            "arrayCopy": true,
+            "noTrailingWhitespace": true
           },
           "description": "代码规范规则配置",
           "properties": {
@@ -99,8 +101,18 @@
             },
             "ueNamingConvention": {
               "type": "boolean",
+              "default": false,
+              "description": "在UE类中，函数和变量的首字母必须大写"
+            },
+            "arrayCopy": {
+              "type": "boolean",
               "default": true,
-              "description": "在继承自UE的类中，函数和变量的首字母必须大写"
+              "description": "【必须】使用数组展开符 ... 来拷贝数组"
+            },
+            "noTrailingWhitespace": {
+              "type": "boolean",
+              "default": true,
+              "description": "【必须】每行末尾不能有空格"
             }
           }
         }

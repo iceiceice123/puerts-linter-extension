@@ -1,5 +1,15 @@
 import * as vscode from 'vscode';
 import { RuleRegistry } from './rules/ruleRegistry';
+import { SemicolonsRule } from './rules/semicolonsRule';
+import { NoConsoleRule } from './rules/noConsoleRule';
+import { NoVarRule } from './rules/noVarRule';
+import { NoAnyRule } from './rules/noAnyRule';
+import { NoEmptyFunctionsRule } from './rules/noEmptyFunctionsRule';
+import { NamingConventionRule } from './rules/namingConventionRule';
+import { FunctionEmptyLineRule } from './rules/functionEmptyLineRule';
+import { UENamingConventionRule } from './rules/ueNamingConventionRule';
+import { ArrayCopyRule } from './rules/arrayCopyRule';
+import { NoTrailingWhitespaceRule } from './rules/noTrailingWhitespaceRule';
 
 export interface LintIssue {
     line: number;
@@ -22,6 +32,8 @@ export interface LinterRules {
     namingConvention?: boolean;
     functionEmptyLine?: boolean;
     ueNamingConvention?: boolean;
+    arrayCopy?: boolean;
+    noTrailingWhitespace?: boolean;
     // 可以添加更多自定义规则
     [key: string]: any;
 }
@@ -79,6 +91,10 @@ export class TypeScriptLinter {
                 return this.rules.functionEmptyLine === true;
             case 'ueNamingConvention':
                 return this.rules.ueNamingConvention === true;
+            case 'arrayCopy':
+                return this.rules.arrayCopy === true;
+            case 'noTrailingWhitespace':
+                return this.rules.noTrailingWhitespace === true;
             default:
                 return false;
         }
@@ -103,6 +119,8 @@ export class TypeScriptLinter {
             case 'namingConvention':
             case 'functionEmptyLine':
             case 'ueNamingConvention':
+            case 'arrayCopy':
+            case 'noTrailingWhitespace':
                 return true;
             default:
                 return undefined;

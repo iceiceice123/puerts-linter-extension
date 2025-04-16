@@ -3,7 +3,6 @@ import { TypeScriptLinter } from './linter';
 import { DiagnosticCollection } from './diagnosticCollection';
 
 let diagnosticCollection: DiagnosticCollection;
-let linter: TypeScriptLinter;
 
 export function activate(context: vscode.ExtensionContext) {
     
@@ -84,7 +83,7 @@ function lintDocument(document: vscode.TextDocument) {
     const rules = config.get('rules', {});
     
     // 创建linter实例并进行检查
-    linter = new TypeScriptLinter(rules);
+    const linter = new TypeScriptLinter(rules);
     const issues = linter.lint(document);
     
     // 更新诊断信息
